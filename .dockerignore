@@ -1,0 +1,14 @@
+node_modules
+.output
+.nitro
+.tanstack
+.git
+.github
+data
+test-results
+playwright-report
+coverage
+*.md
+.env
+.env.*
+!.env.example

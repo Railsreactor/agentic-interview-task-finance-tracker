@@ -1,0 +1,5 @@
+Date,Amount,Description,Category
+2025-02-01,-12.34,Valid row,
+not-a-date,-50.00,Bad date row,
+2025-02-03,abc,Bad amount row,
+2025-02-04,0,Zero amount row,

@@ -1,0 +1,6 @@
+# Finance Tracker vulnerability disclosure policy.
+# Update Contact and Expires before public launch.
+Contact: mailto:security@finance-tracker.invalid
+Expires: 2027-07-11T00:00:00.000Z
+Preferred-Languages: en, pl
+Policy: /security

@@ -1,0 +1,12 @@
+{
+  "indent": {
+    "style": "tab"
+  },
+  "includes": [
+    "**/src/**/*",
+    "**/index.html",
+    "**/vite.config.ts",
+    "!**/src/routeTree.gen.ts",
+    "!**/src/styles.css"
+  ]
+}
