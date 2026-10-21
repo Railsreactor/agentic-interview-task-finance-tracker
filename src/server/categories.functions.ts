@@ -3,6 +3,7 @@ import { eq, and, asc, count, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "#/db";
 import { requireUserId } from "#/server/session";
+import { checkBudgetAlerts } from "#/server/budget-alerts.server";
 
 
 const colorRegex = /^#[0-9A-Fa-f]{6}$/;
@@ -309,6 +310,8 @@ export const deleteCategory = createServerFn({ method: "POST" })
     await db
       .delete(schema.categories)
       .where(inArray(schema.categories.id, allIdsToDelete));
+
+    if (data.reassignToCategoryId) await checkBudgetAlerts(userId);
 
     return { success: true };
   });

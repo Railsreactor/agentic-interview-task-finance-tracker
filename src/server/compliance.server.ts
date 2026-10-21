@@ -70,6 +70,10 @@ export async function collectUserExport(userId: string) {
     .select()
     .from(schema.categories)
     .where(eq(schema.categories.user_id, userId));
+  const budgets = await db
+    .select()
+    .from(schema.budgets)
+    .where(eq(schema.budgets.user_id, userId));
   const transactions = await db
     .select()
     .from(schema.transactions)
@@ -117,6 +121,7 @@ export async function collectUserExport(userId: string) {
     accounts,
     categories,
     transactions,
+    budgets,
     rules,
     importBatches,
     receipts,
@@ -145,6 +150,7 @@ export async function buildExportZip(userId: string): Promise<Uint8Array> {
         accounts: data.accounts,
         categories: data.categories,
         transactions: data.transactions,
+        budgets: data.budgets,
         categorizationRules: data.rules,
         importBatches: data.importBatches,
         receipts: data.receipts.map(({ image_path, ...receipt }) => ({
@@ -324,6 +330,20 @@ export async function hardDeleteUser(userId: string): Promise<void> {
     await tx
       .delete(schema.categorization_rules)
       .where(eq(schema.categorization_rules.user_id, userId));
+    await tx
+      .delete(schema.budget_alerts)
+      .where(
+        inArray(
+          schema.budget_alerts.budget_id,
+          tx
+            .select({ id: schema.budgets.id })
+            .from(schema.budgets)
+            .where(eq(schema.budgets.user_id, userId)),
+        ),
+      );
+    await tx
+      .delete(schema.budgets)
+      .where(eq(schema.budgets.user_id, userId));
     await tx.delete(schema.ai_usage).where(eq(schema.ai_usage.user_id, userId));
     await tx
       .delete(schema.subscriptions)
