@@ -29,6 +29,20 @@
       "when": 1783806144711,
       "tag": "0003_hesitant_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792593781691,
+      "tag": "0004_budgets",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792595944189,
+      "tag": "0005_budget_alert_leases",
+      "breakpoints": true
     }
   ]
 }

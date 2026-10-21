@@ -17,6 +17,8 @@ export interface Entitlements {
   plan: Plan;
   /** null = unlimited. */
   maxAccounts: number | null;
+  /** null = unlimited. */
+  maxBudgets: number | null;
   scansPerMonth: number;
 }
 
@@ -32,12 +34,14 @@ export function entitlementsForPlan(plan: Plan): Entitlements {
     return {
       plan,
       maxAccounts: null,
+      maxBudgets: null,
       scansPerMonth: env.billing.proScansPerMonth,
     };
   }
   return {
     plan: "free",
     maxAccounts: env.billing.freeMaxAccounts,
+    maxBudgets: 3,
     scansPerMonth: env.ai.freeScansPerMonth,
   };
 }
@@ -105,6 +109,43 @@ export async function checkAccountLimit(
       error: `Free plan is limited to ${entitlements.maxAccounts} accounts. Upgrade to Pro for unlimited accounts.`,
     };
   }
+  return { allowed: true };
+}
+
+export type BudgetLimitResult =
+  | { allowed: true }
+  | {
+      allowed: false;
+      code: "budget_limit_reached";
+      limit: number;
+      error: string;
+    };
+
+/**
+ * Free users may create up to three budgets. Existing budgets are retained
+ * after a downgrade; only attempts to create additional budgets are blocked.
+ */
+export async function checkBudgetLimit(
+  userId: string,
+  db: Db = defaultDb,
+): Promise<BudgetLimitResult> {
+  const entitlements = await getEntitlements(userId, db);
+  if (entitlements.maxBudgets === null) return { allowed: true };
+
+  const rows = await db
+    .select({ count: count() })
+    .from(schema.budgets)
+    .where(eq(schema.budgets.user_id, userId));
+
+  if ((rows[0]?.count ?? 0) >= entitlements.maxBudgets) {
+    return {
+      allowed: false,
+      code: "budget_limit_reached",
+      limit: entitlements.maxBudgets,
+      error: `Free plan is limited to ${entitlements.maxBudgets} budgets. Upgrade to Pro for unlimited budgets.`,
+    };
+  }
+
   return { allowed: true };
 }
 

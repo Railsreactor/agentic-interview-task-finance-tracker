@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db, schema } from "#/db";
 import { ownedEntityExists } from "#/server/ownership.server";
 import { requireUserId } from "#/server/session";
+import { checkBudgetAlerts } from "#/server/budget-alerts.server";
 
 
 // --- Schemas ---
@@ -303,6 +304,8 @@ export const createTransaction = createServerFn({ method: "POST" })
       source_ref: data.sourceRef || null,
     });
 
+    await checkBudgetAlerts(userId);
+
     return {
       id,
       account_id: data.accountId,
@@ -378,6 +381,8 @@ export const updateTransaction = createServerFn({ method: "POST" })
           eq(schema.transactions.user_id, userId),
         ),
       );
+
+    await checkBudgetAlerts(userId);
 
     return { success: true };
   });

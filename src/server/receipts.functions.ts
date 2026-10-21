@@ -3,6 +3,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "#/db";
 import { isEmailVerified, requireUserId } from "#/server/session";
+import { checkBudgetAlerts } from "#/server/budget-alerts.server";
 import { extractReceiptItems, type ReceiptExtraction } from "#/server/ai";
 import {
   checkScanAllowed,
@@ -521,12 +522,14 @@ export const saveReceiptAndLink = createServerFn({ method: "POST" })
         user_id: userId,
         account_id: data.accountId,
         date: data.date,
-        amount_minor: data.totalMinor,
+        amount_minor: -Math.abs(data.totalMinor),
         description: data.store_name || null,
         category_id: parentId,
         source: "receipt",
         source_ref: sourceRef,
       });
+
+      await checkBudgetAlerts(userId);
 
       // Link receipt to new transaction
       await db

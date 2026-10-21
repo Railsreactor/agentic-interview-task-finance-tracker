@@ -9,6 +9,8 @@ import {
   doublePrecision,
   serial,
   index,
+  uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const auth_token_type = pgEnum("auth_token_type", [
@@ -282,3 +284,61 @@ export const todos = pgTable("todos", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .defaultNow(),
 });
+
+// One monthly spending limit per (user, category). A budget on a parent
+// category covers its whole subtree (resolved at read time, not stored).
+export const budgets = pgTable(
+  "budgets",
+  {
+    id: text("id").primaryKey(),
+    user_id: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    category_id: text("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    // Integer minor units (grosze/cents) — never store money as floats.
+    limit_minor: integer("limit_minor").notNull(),
+    created_at: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    updated_at: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("budgets_user_category_uq").on(t.user_id, t.category_id)],
+);
+
+
+/**
+ * Idempotency ledger for budget emails.
+ * A pending reservation prevents concurrent sends; the lease allows
+ * recovery if a process crashes before confirming delivery.
+ */
+export const budget_alerts = pgTable(
+  "budget_alerts",
+  {
+    budget_id: text("budget_id")
+      .notNull()
+      .references(() => budgets.id, { onDelete: "cascade" }),
+    // "YYYY-MM"
+    month: text("month").notNull(),
+    status: text("status").notNull().default("pending"),
+    lease_until: timestamp("lease_until", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    sent_at: timestamp("sent_at", {
+      withTimezone: true,
+      mode: "date",
+    }),
+    updated_at: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "date",
+    })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.budget_id, t.month] })],
+);
+
